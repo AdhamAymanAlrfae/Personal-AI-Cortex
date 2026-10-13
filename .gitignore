@@ -1,0 +1,31 @@
+data/
+
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# JavaScript
+node_modules/
+dist/
+npm-debug.log*
+
+# Generated evaluation outputs
+evaluation/results/*
+
+# Editor and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
