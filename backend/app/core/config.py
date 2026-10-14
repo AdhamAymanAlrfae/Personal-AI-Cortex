@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     upload_allowed_extensions: set[str] = {".txt", ".pdf", ".md"}
     upload_max_size_bytes: int = 10 * 1024 * 1024
 
+    # Document chunking
+    chunk_size: int = 300
+    chunk_overlap: int = 30
+
     # Langfuse settings
     langfuse_secret_key: SecretStr | None = None
     langfuse_public_key: SecretStr | None = None
