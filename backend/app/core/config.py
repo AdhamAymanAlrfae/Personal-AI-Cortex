@@ -4,6 +4,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
+RAW_DATA_DIR = BACKEND_ROOT.parent / "data" / "raw"
 
 
 class Settings(BaseSettings):
@@ -16,6 +17,10 @@ class Settings(BaseSettings):
     # Application settings
     app_env: str = "development"
     log_level: str = "INFO"
+
+    # Data uploads
+    upload_allowed_extensions: set[str] = {".txt", ".pdf", ".md"}
+    upload_max_size_bytes: int = 10 * 1024 * 1024
 
     # Langfuse settings
     langfuse_secret_key: SecretStr | None = None
