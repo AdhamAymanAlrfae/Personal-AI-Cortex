@@ -4,7 +4,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
-from app.providers.chunking.base import BaseChunker
+from app.providers.ingestion.chunking.base import BaseChunker
 
 
 class RecursiveCharacterChunker(BaseChunker):
