@@ -41,7 +41,8 @@ Implementation scope and progress are tracked in GitHub. See the [Issues](../../
 ## Data and Configuration
 
 - Keep credentials and API keys in environment variables; never commit secrets.
-- Use `.env.example` to document required configuration without real credentials.
+- Copy `backend/.env.example` to `backend/.env` for backend settings. The backend loads this file directly, and Docker Compose passes it to the backend container.
+- Copy `.env.example` to the repository-root `.env` for Compose port overrides.
 - Do not commit private documents, restricted datasets, or large generated artifacts unless there is a clear reason and permission to share them.
 
 ## Current Scope

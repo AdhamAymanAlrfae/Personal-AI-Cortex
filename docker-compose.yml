@@ -2,9 +2,8 @@ services:
   backend:
     build:
       context: ./backend
-    environment:
-      APP_ENV: ${APP_ENV:-development}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    env_file:
+      - ./backend/.env
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
