@@ -1,4 +1,4 @@
-from typing import Protocol
+import logging
 
 from app.core.config import settings
 from app.providers.embeddings.sparse_base import (
@@ -6,21 +6,7 @@ from app.providers.embeddings.sparse_base import (
     SparseVectorEmbedding,
 )
 
-
-class _IntegerArray(Protocol):
-    def tolist(self) -> list[int]: ...
-
-
-class _FloatArray(Protocol):
-    def tolist(self) -> list[float]: ...
-
-
-class _FastEmbedSparseEmbedding(Protocol):
-    @property
-    def indices(self) -> _IntegerArray: ...
-
-    @property
-    def values(self) -> _FloatArray: ...
+logger = logging.getLogger(__name__)
 
 
 class FastEmbedSparseEmbeddingProvider(BaseSparseEmbeddingProvider):
@@ -39,9 +25,7 @@ class FastEmbedSparseEmbeddingProvider(BaseSparseEmbeddingProvider):
         return self._convert_embedding(embedding)
 
     @staticmethod
-    def _convert_embedding(
-        embedding: _FastEmbedSparseEmbedding,
-    ) -> SparseVectorEmbedding:
+    def _convert_embedding(embedding) -> SparseVectorEmbedding:
         return SparseVectorEmbedding(
             indices=embedding.indices.tolist(),
             values=embedding.values.tolist(),

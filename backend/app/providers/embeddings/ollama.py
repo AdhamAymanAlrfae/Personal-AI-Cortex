@@ -1,5 +1,9 @@
+import logging
+
 from app.core.config import settings
 from app.providers.embeddings.base import BaseEmbeddingProvider
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaEmbeddingProvider(BaseEmbeddingProvider):

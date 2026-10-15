@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from typing import Generic, TypeVar
 
 PointType = TypeVar("PointType")
-
 PointScore = TypeVar("PointScore")
 
 

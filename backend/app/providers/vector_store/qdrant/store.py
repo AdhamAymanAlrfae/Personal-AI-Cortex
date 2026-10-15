@@ -1,8 +1,13 @@
+import logging
 from collections.abc import Sequence
 
 from app.core.config import settings
 from app.providers.vector_store.base import BaseVectorStore
 from qdrant_client import QdrantClient, models
+
+logger = logging.getLogger(__name__)
+
+logger.info("init")
 
 
 class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint]):
