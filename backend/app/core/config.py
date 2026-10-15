@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # Application settings
     app_env: str = "development"
-    log_level: str = "INFO"
+    log_level: str = "DEBUG"
 
     # Data uploads
     upload_allowed_extensions: set[str] = {".txt", ".pdf", ".md"}
@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     embed_model: str = "qwen3-embedding:0.6b"
     embed_dim: int = 1024
     embed_context: int = 32_000
+
+    # Sparse model
+    sparse_model: str = "Qdrant/bm25"
 
     # LLM model
     llm_model: str = "gemma4:e4b"
