@@ -77,12 +77,14 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         query_values: list[float],
         *,
         limit: int = 5,
+        threshold: float = 0.5,
     ) -> list[models.ScoredPoint]:
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             query=models.SparseVector(indices=query_indices, values=query_values),
             limit=limit,
             using="sparse_vector",
+            score_threshold=threshold,
         )
         points = search_result.points
         logger.debug(
@@ -100,6 +102,7 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         sparse_values: list[float],
         *,
         limit: int = 5,
+        threshold: float = 0.5,
     ) -> list[models.ScoredPoint]:
         search_result = self.client.query_points(
             collection_name=self.collection_name,
@@ -119,6 +122,7 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
             ],
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=limit,
+            score_threshold=threshold,
         )
         points = search_result.points
         logger.debug(
