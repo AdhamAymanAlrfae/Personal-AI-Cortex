@@ -45,6 +45,23 @@ Implementation scope and progress are tracked in GitHub. See the [Issues](../../
 - Copy `.env.example` to the repository-root `.env` for Compose port overrides.
 - Do not commit private documents, restricted datasets, or large generated artifacts unless there is a clear reason and permission to share them.
 
+## Embedding Providers
+
+The backend exposes a shared LangChain-compatible embedding interface with `embed_documents(texts)` for chunks and `embed_query(text)` for search queries:
+
+```python
+from app.providers.embeddings import OllamaEmbeddingProvider
+
+ollama_embeddings = OllamaEmbeddingProvider(
+    "qwen3-embedding:0.6b",
+    base_url="http://localhost:11434",
+)
+chunk_vectors = ollama_embeddings.embed_documents(["First chunk", "Second chunk"])
+query_vector = ollama_embeddings.embed_query("Search question")
+```
+
+The Ollama provider requires the selected embedding model to be available on the configured Ollama server. Omit `base_url` to use Ollama's default server address.
+
 ## Current Scope
 
 The initial goal is a small, testable RAG application with grounded answers, inspectable citations, and a repeatable evaluation workflow. Features beyond that scope should be added only when they support a clear use case.
