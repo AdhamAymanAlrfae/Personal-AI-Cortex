@@ -23,8 +23,10 @@ def test_base_embedding_provider_defines_embedding_contract() -> None:
 
 def test_ollama_provider_delegates_query_and_document_embeddings(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     calls: dict[str, Any] = {}
+    caplog.set_level("DEBUG", logger="app.providers.embeddings.ollama")
 
     class FakeOllamaEmbeddings:
         def __init__(self, **kwargs: Any) -> None:
@@ -51,12 +53,22 @@ def test_ollama_provider_delegates_query_and_document_embeddings(
         "documents": ["chunk"],
         "query": "question",
     }
+    assert "Loading Ollama embedding model nomic-embed-text" in caplog.text
+    assert "Loaded Ollama embedding model nomic-embed-text" in caplog.text
+    assert "Generating embeddings for 1 documents" in caplog.text
+    assert "Generated embeddings for 1 documents" in caplog.text
+    assert "Generating embedding for query" in caplog.text
+    assert "Generated embedding for query" in caplog.text
+    assert "chunk" not in caplog.text
+    assert "question" not in caplog.text
 
 
 def test_fastembed_sparse_provider_converts_document_and_query_embeddings(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     calls: dict[str, Any] = {}
+    caplog.set_level("DEBUG", logger="app.providers.embeddings.fastembed_sparse")
 
     class FakeArray:
         def __init__(self, values: list[int] | list[float]) -> None:
@@ -99,3 +111,8 @@ def test_fastembed_sparse_provider_converts_document_and_query_embeddings(
         "documents": ["chunk"],
         "query": "question",
     }
+    assert "Loading sparse embedding model Qdrant/bm25" in caplog.text
+    assert "Generated sparse embeddings for 1 documents" in caplog.text
+    assert "Generating sparse embedding for query" in caplog.text
+    assert "chunk" not in caplog.text
+    assert "question" not in caplog.text

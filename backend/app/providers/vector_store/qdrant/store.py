@@ -7,8 +7,6 @@ from qdrant_client import QdrantClient, models
 
 logger = logging.getLogger(__name__)
 
-logger.info("init")
-
 
 class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint]):
     def __init__(self, collection_name: str):
@@ -16,8 +14,12 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         self.client = QdrantClient(
             url=settings.qdrant_url, api_key=settings.qdrant_api_key.get_secret_value()
         )
+        logger.info(
+            "Initialized Qdrant vector store for collection %s", collection_name
+        )
 
     def create_collection(self) -> None:
+        logger.info("Recreating Qdrant collection %s", self.collection_name)
         self.client.recreate_collection(
             collection_name=self.collection_name,
             vectors_config={
@@ -30,17 +32,27 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
                 "sparse_vector": models.SparseVectorParams(modifier=models.Modifier.IDF)
             },
         )
+        logger.info("Recreated Qdrant collection %s", self.collection_name)
 
     def add_points(self, points: Sequence[models.PointStruct]) -> None:
+        logger.debug(
+            "Adding %d points into Qdrant collection %s",
+            len(points),
+            self.collection_name,
+        )
         self.client.upsert(
             collection_name=self.collection_name,
             points=points,
+        )
+        logger.info(
+            "Added %d points into Qdrant collection %s",
+            len(points),
+            self.collection_name,
         )
 
     def dense_search(
         self, query_vector: list[float], *, limit: int = 5, threshold: float = 0.7
     ) -> list[models.ScoredPoint]:
-
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
@@ -48,7 +60,16 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
             using="dense_vector",
             threshold=threshold,
         )
-        return search_result.points
+        points = search_result.points
+        logger.debug(
+            "Dense search in Qdrant collection %s returned %d points "
+            "(limit=%d, threshold=%s)",
+            self.collection_name,
+            len(points),
+            limit,
+            threshold,
+        )
+        return points
 
     def sparse_search(
         self,
@@ -57,14 +78,20 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         *,
         limit: int = 5,
     ) -> list[models.ScoredPoint]:
-
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             query=models.SparseVector(indices=query_indices, values=query_values),
             limit=limit,
             using="sparse_vector",
         )
-        return search_result.points
+        points = search_result.points
+        logger.debug(
+            "Sparse search in Qdrant collection %s returned %d points (limit=%d)",
+            self.collection_name,
+            len(points),
+            limit,
+        )
+        return points
 
     def hybrid_search(
         self,
@@ -74,7 +101,6 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         *,
         limit: int = 5,
     ) -> list[models.ScoredPoint]:
-
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             prefetch=[
@@ -94,4 +120,11 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=limit,
         )
-        return search_result.points
+        points = search_result.points
+        logger.debug(
+            "Hybrid search in Qdrant collection %s returned %d points (limit=%d)",
+            self.collection_name,
+            len(points),
+            limit,
+        )
+        return points

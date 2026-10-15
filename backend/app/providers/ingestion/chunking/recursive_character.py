@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Sequence
 
 from langchain_core.documents import Document
@@ -5,6 +6,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
 from app.providers.ingestion.chunking.base import BaseChunker
+
+logger = logging.getLogger(__name__)
 
 
 class RecursiveCharacterChunker(BaseChunker):
@@ -24,10 +27,14 @@ class RecursiveCharacterChunker(BaseChunker):
 
     def split_documents(self, documents: Sequence[Document]) -> list[Document]:
         """Split documents, retaining metadata and adding a per-document index."""
+        logger.debug(
+            "Chunking %d documents with recursive character chunker", len(documents)
+        )
         chunks: list[Document] = []
         for document in documents:
             document_chunks = self._splitter.split_documents([document])
             for chunk_index, chunk in enumerate(document_chunks):
                 chunk.metadata["chunk_index"] = chunk_index
                 chunks.append(chunk)
+        logger.debug("Recursive character chunker generated %d chunks", len(chunks))
         return chunks

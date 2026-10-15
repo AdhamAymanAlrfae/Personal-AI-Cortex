@@ -15,12 +15,20 @@ class FastEmbedSparseEmbeddingProvider(BaseSparseEmbeddingProvider):
     def __init__(self, model: str = settings.sparse_model) -> None:
         from fastembed import SparseTextEmbedding
 
+        logger.info("Loading sparse embedding model %s", model)
         self._embeddings = SparseTextEmbedding(model_name=model)
+        logger.info("Loaded sparse embedding model %s", model)
 
     def embed_documents(self, texts: list[str]) -> list[SparseVectorEmbedding]:
-        return [self._convert_embedding(item) for item in self._embeddings.embed(texts)]
+        logger.debug("Generating sparse embeddings for %d documents", len(texts))
+        embeddings = [
+            self._convert_embedding(item) for item in self._embeddings.embed(texts)
+        ]
+        logger.debug("Generated sparse embeddings for %d documents", len(embeddings))
+        return embeddings
 
     def embed_query(self, text: str) -> SparseVectorEmbedding:
+        logger.debug("Generating sparse embedding for query")
         embedding = next(iter(self._embeddings.query_embed(text)))
         return self._convert_embedding(embedding)
 

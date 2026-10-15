@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Sequence
 
 from langchain_core.documents import Document
@@ -8,6 +9,8 @@ from langchain_text_splitters import (
 
 from app.core.config import settings
 from app.providers.ingestion.chunking.base import BaseChunker
+
+logger = logging.getLogger(__name__)
 
 _MARKDOWN_HEADERS = [
     ("#", "Header 1"),
@@ -42,6 +45,7 @@ class MarkdownChunker(BaseChunker):
 
     def split_documents(self, documents: Sequence[Document]) -> list[Document]:
         """Split each document and attach its heading hierarchy and chunk index."""
+        logger.debug("Chunking %d documents with Markdown chunker", len(documents))
         chunks: list[Document] = []
         for document in documents:
             document_chunk_index = 0
@@ -67,4 +71,5 @@ class MarkdownChunker(BaseChunker):
                     chunk.metadata["chunk_index"] = document_chunk_index
                     chunks.append(chunk)
                     document_chunk_index += 1
+        logger.debug("Markdown chunker generated %d chunks", len(chunks))
         return chunks
