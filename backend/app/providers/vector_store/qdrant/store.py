@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint]):
     def __init__(self, collection_name: str):
-        self.collection_name = collection_name
+        self.collection_name = settings.qdrant_collection_name or collection_name
         self.client = QdrantClient(
             url=settings.qdrant_url, api_key=settings.qdrant_api_key.get_secret_value()
         )
@@ -19,8 +19,12 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         )
 
     def create_collection(self) -> None:
-        logger.info("Recreating Qdrant collection %s", self.collection_name)
-        self.client.recreate_collection(
+        if self.client.collection_exists(collection_name=self.collection_name):
+            logger.info("Qdrant collection %s already exists", self.collection_name)
+            return
+
+        logger.info("Creating Qdrant collection %s", self.collection_name)
+        self.client.create_collection(
             collection_name=self.collection_name,
             vectors_config={
                 "dense_vector": models.VectorParams(
@@ -32,9 +36,19 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
                 "sparse_vector": models.SparseVectorParams(modifier=models.Modifier.IDF)
             },
         )
-        logger.info("Recreated Qdrant collection %s", self.collection_name)
+        logger.info("Created Qdrant collection %s", self.collection_name)
+
+    def recreate_collection(self) -> bool:
+        existed = self.client.collection_exists(collection_name=self.collection_name)
+        if existed:
+            logger.warning("Deleting Qdrant collection %s", self.collection_name)
+            self.client.delete_collection(collection_name=self.collection_name)
+
+        self.create_collection()
+        return existed
 
     def add_points(self, points: Sequence[models.PointStruct]) -> None:
+        self.create_collection()  # TODO: Do i really need to chuck it every time.
         logger.debug(
             "Adding %d points into Qdrant collection %s",
             len(points),

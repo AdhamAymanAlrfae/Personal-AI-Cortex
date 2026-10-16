@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 
 from app.api.routes.data import router as data_router
 from app.core.logging import configure_logging
@@ -7,6 +8,35 @@ configure_logging()
 
 app = FastAPI(title="Personal AI Cortex")
 app.include_router(data_router)
+
+
+# Add this so i can upload more than one files in the /docs at once
+def custom_openapi() -> dict[str, object]:
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+    request_schema = openapi_schema["paths"]["/data/upload"]["post"]["requestBody"][
+        "content"
+    ]["multipart/form-data"]["schema"]
+    schema_reference = request_schema.get("$ref")
+    if isinstance(schema_reference, str):
+        component_name = schema_reference.rsplit("/", 1)[-1]
+        request_schema = openapi_schema["components"]["schemas"][component_name]
+    request_schema["properties"]["files"]["items"] = {
+        "type": "string",
+        "format": "binary",
+    }
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 @app.get("/health")

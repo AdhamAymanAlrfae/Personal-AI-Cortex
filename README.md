@@ -62,6 +62,20 @@ query_vector = ollama_embeddings.embed_query("Search question")
 
 The Ollama provider requires the selected embedding model to be available on the configured Ollama server. Omit `base_url` to use Ollama's default server address.
 
+## Document Ingestion
+
+Upload one or more `.txt`, `.md`, or `.pdf` files to `POST /data/upload` as multipart form fields named `files`. Each file is saved under `data/raw/`; the files are then chunked individually, with all chunks embedded together and sent to Qdrant in one upsert per upload request. The endpoint returns an outcome for each file. Because embedding and storage are shared across the request, a failure in either stage marks every file in that upload batch as failed and returns HTTP `207 Multi-Status`.
+
+The backend creates the Qdrant collection on first use if it does not exist; it does not recreate an existing collection. Configure `QDRANT_COLLECTION_NAME` in `backend/.env` to select a collection.
+
+Example:
+
+```sh
+curl -X POST http://localhost:8000/data/upload \
+  -F "files=@./notes.md" \
+  -F "files=@./report.pdf"
+```
+
 ## Current Scope
 
 The initial goal is a small, testable RAG application with grounded answers, inspectable citations, and a repeatable evaluation workflow. Features beyond that scope should be added only when they support a clear use case.

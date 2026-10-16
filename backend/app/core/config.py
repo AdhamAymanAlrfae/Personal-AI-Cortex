@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # Qdrant settings
     qdrant_api_key: SecretStr
     qdrant_url: str
+    qdrant_collection_name: str = "personal-ai-cortex"
 
     # Embedding model
     embed_model: str = "qwen3-embedding:0.6b"

@@ -1,6 +1,9 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from langchain_core.documents import Document
+from qdrant_client import models
+
 from app.providers.embeddings.base import BaseEmbeddingProvider
 from app.providers.embeddings.sparse_base import (
     BaseSparseEmbeddingProvider,
@@ -10,8 +13,6 @@ from app.providers.ingestion.chunking import MarkdownChunker, RecursiveCharacter
 from app.providers.ingestion.chunking.base import BaseChunker
 from app.providers.vector_store.base import BaseVectorStore
 from app.services.ingestion import DocumentIngestionService, IngestionResult
-from langchain_core.documents import Document
-from qdrant_client import models
 
 
 class FakeDenseEmbeddings(BaseEmbeddingProvider):
@@ -44,8 +45,10 @@ class FakeSparseEmbeddings(BaseSparseEmbeddingProvider):
 class FakeVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint]):
     def __init__(self) -> None:
         self.points: list[models.PointStruct] = []
+        self.add_calls: list[list[models.PointStruct]] = []
 
     def add_points(self, points: Sequence[models.PointStruct]) -> None:
+        self.add_calls.append(list(points))
         self.points.extend(points)
 
     def dense_search(
@@ -111,6 +114,27 @@ def test_ingest_markdown_file_chunks_embeds_builds_and_stores_points(
             "chunk_index": 0,
         },
     }
+
+
+def test_ingest_files_batches_embeddings_and_storage(tmp_path: Path) -> None:
+    first = tmp_path / "first.md"
+    first.write_text("# First\nFirst file content.", encoding="utf-8")
+    second = tmp_path / "second.md"
+    second.write_text("# Second\nSecond file content.", encoding="utf-8")
+    dense = FakeDenseEmbeddings()
+    sparse = FakeSparseEmbeddings()
+    store = FakeVectorStore()
+    service = DocumentIngestionService(dense, sparse, store, chunker=MarkdownChunker())
+
+    results = service.ingest_files([first, second])
+
+    assert [result.source for result in results] == [str(first), str(second)]
+    assert [result.chunks_created for result in results] == [1, 1]
+    assert [result.points_added for result in results] == [1, 1]
+    assert dense.calls == [["First file content.", "Second file content."]]
+    assert sparse.calls == dense.calls
+    assert len(store.add_calls) == 1
+    assert len(store.points) == 2
 
 
 def test_ingest_file_skips_embedding_and_storage_when_no_chunks(

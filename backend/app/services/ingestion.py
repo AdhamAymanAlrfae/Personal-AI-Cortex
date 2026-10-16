@@ -1,7 +1,9 @@
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from langchain_core.documents import Document
 from qdrant_client import models
 
 from app.providers.embeddings.base import BaseEmbeddingProvider
@@ -25,7 +27,7 @@ class IngestionResult:
 
 
 class DocumentIngestionService:
-    """Load, chunk, embed, and store a document using injected providers."""
+    """Load, chunk, embed, and store documents using injected providers."""
 
     def __init__(
         self,
@@ -41,39 +43,57 @@ class DocumentIngestionService:
 
     def ingest_file(self, file_path: str | Path) -> IngestionResult:
         """Ingest one supported file and upsert its chunks into the vector store."""
-        path = Path(file_path)
-        logger.info("Starting ingestion for %s", path)
+        return self.ingest_files([file_path])[0]
 
-        documents = load_document(path)
-        chunks = self._chunker.split_documents(documents)
-        if not chunks:
-            logger.info(
-                "No chunks created for %s; skipping embedding and storage", path
-            )
-            return IngestionResult(
-                source=str(path),
-                documents_loaded=len(documents),
-                chunks_created=0,
-                points_added=0,
-            )
+    def ingest_files(self, file_paths: Sequence[str | Path]) -> list[IngestionResult]:
+        """Chunk files individually, then embed and store all chunks in one batch."""
+        paths = [Path(file_path) for file_path in file_paths]
+        documents_loaded: list[int] = []
+        chunks_by_file: list[list[Document]] = []
+        for path in paths:
+            logger.info("Starting ingestion for %s", path)
+            documents = load_document(path)
+            chunks = self._chunker.split_documents(documents)
+            documents_loaded.append(len(documents))
+            chunks_by_file.append(chunks)
 
-        texts = [chunk.page_content for chunk in chunks]
+        all_chunks = [chunk for chunks in chunks_by_file for chunk in chunks]
+        if not all_chunks:
+            logger.info("No chunks created; skipping embedding and storage")
+            return [
+                IngestionResult(
+                    source=str(path),
+                    documents_loaded=document_count,
+                    chunks_created=0,
+                    points_added=0,
+                )
+                for path, document_count in zip(
+                    paths, documents_loaded, strict=True
+                )
+            ]
+
+        texts = [chunk.page_content for chunk in all_chunks]
         dense_vectors = self._dense_embeddings.embed_documents(texts)
         sparse_vectors = self._sparse_embeddings.embed_documents(texts)
-        points = build_qdrant_points(chunks, dense_vectors, sparse_vectors)
+        points = build_qdrant_points(all_chunks, dense_vectors, sparse_vectors)
         self._vector_store.add_points(points)
 
-        result = IngestionResult(
-            source=str(path),
-            documents_loaded=len(documents),
-            chunks_created=len(chunks),
-            points_added=len(points),
-        )
-        logger.info(
-            "Completed ingestion for %s: %d documents, %d chunks, %d points",
-            path,
-            result.documents_loaded,
-            result.chunks_created,
-            result.points_added,
-        )
-        return result
+        results: list[IngestionResult] = []
+        for path, document_count, chunks in zip(
+            paths, documents_loaded, chunks_by_file, strict=True
+        ):
+            result = IngestionResult(
+                source=str(path),
+                documents_loaded=document_count,
+                chunks_created=len(chunks),
+                points_added=len(chunks),
+            )
+            logger.info(
+                "Completed ingestion for %s: %d documents, %d chunks, %d points",
+                path,
+                result.documents_loaded,
+                result.chunks_created,
+                result.points_added,
+            )
+            results.append(result)
+        return results
