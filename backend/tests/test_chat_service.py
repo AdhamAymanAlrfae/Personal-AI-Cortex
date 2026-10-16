@@ -2,13 +2,14 @@ from collections.abc import Sequence
 from typing import cast
 
 import pytest
+from langchain_core.messages import AIMessage, BaseMessage
+from qdrant_client import models
+
 from app.providers.llm.base import BaseLLMProvider
 from app.providers.llm.prompt import LLMPromptHandler
 from app.schemas.chat import ChatSource
 from app.services.chat import ChatService
 from app.services.retrieval import DocumentRetrievalService, RetrievalMode
-from langchain_core.messages import AIMessage, BaseMessage
-from qdrant_client import models
 
 
 class FakeRetrieval:
@@ -34,12 +35,13 @@ class FakeRetrieval:
 
 
 class FakeLLM(BaseLLMProvider):
-    def __init__(self) -> None:
+    def __init__(self, answer: str = "A cited answer [S1].") -> None:
         self.messages: Sequence[BaseMessage] = []
+        self.answer = answer
 
     def invoke(self, messages: Sequence[BaseMessage]) -> AIMessage:
         self.messages = messages
-        return AIMessage(content="A cited answer [S1].")
+        return AIMessage(content=self.answer)
 
 
 class FakePromptHandler:
@@ -99,7 +101,7 @@ def test_chat_service_retrieves_builds_prompt_invokes_llm_and_returns_citations(
     assert prompt_handler.variables == {
         "question": "What are the goals?",
         "context": (
-            "Cite supporting facts with the provided bracketed source labels, "
+            "Cite supporting facts with the provided source labels, "
             "such as [S1]. Do not invent citations.\n\n"
             "[S1] Source: notes.md, page 3, section Overview > Goals\n"
             "Relevant knowledge."
@@ -136,6 +138,53 @@ def test_chat_service_handles_no_retrieved_sources() -> None:
         prompt_handler.variables["context"] == "No relevant source chunks were found."
     )
     assert response.sources == []
+
+
+def test_chat_service_removes_citations_to_unretrieved_sources() -> None:
+    service = ChatService(
+        cast(DocumentRetrievalService, FakeRetrieval([_point()])),
+        FakeLLM(
+            "Supported [S1], unsupported [S2], hallucinated [S25] "
+            "and legacy-style 【S26】."
+        ),
+        cast(LLMPromptHandler, FakePromptHandler()),
+    )
+
+    response = service.answer("Question")
+
+    assert response.answer == (
+        "Supported [S1], unsupported, hallucinated and legacy-style."
+    )
+
+
+def test_chat_service_removes_citations_when_no_sources_were_retrieved() -> None:
+    service = ChatService(
+        cast(DocumentRetrievalService, FakeRetrieval([])),
+        FakeLLM("Unsupported [S1]."),
+        cast(LLMPromptHandler, FakePromptHandler()),
+    )
+
+    response = service.answer("Unknown question")
+
+    assert response.answer == "Unsupported."
+
+
+def test_chat_service_returns_only_sources_cited_in_the_answer() -> None:
+    points = [
+        _point(content=f"Evidence from source {number}.", source=f"notes{number}.md")
+        for number in range(1, 5)
+    ]
+    service = ChatService(
+        cast(DocumentRetrievalService, FakeRetrieval(points)),
+        FakeLLM("Evidence one [S1] and two [S2]."),
+        cast(LLMPromptHandler, FakePromptHandler()),
+    )
+
+    response = service.answer("Question")
+
+    assert response.answer == "Evidence one [S1] and two [S2]."
+    assert [source.citation for source in response.sources] == ["S1", "S2"]
+    assert [source.source for source in response.sources] == ["notes1.md", "notes2.md"]
 
 
 @pytest.mark.parametrize(

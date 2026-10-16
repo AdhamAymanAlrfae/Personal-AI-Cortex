@@ -1,4 +1,5 @@
 import logging
+import re
 from collections.abc import Sequence
 from pathlib import PurePath
 from typing import Any
@@ -54,12 +55,42 @@ class ChatService:
         response = self._llm.invoke(messages)
         if not isinstance(response.content, str):
             raise TypeError("The LLM provider returned a non-text answer.")
+        answer = self._remove_unretrieved_citations(response.content, sources)
+        cited_citations = set(re.findall(r"\[(S\d+)\]", answer))
+        cited_sources = [
+            source for source in sources if source.citation in cited_citations
+        ]
 
         logger.info(
-            "Answered chat question using %d retrieved sources",
+            "Answered chat question citing %d of %d retrieved sources",
+            len(cited_sources),
             len(sources),
         )
-        return ChatResponse(answer=response.content, sources=sources)
+        return ChatResponse(answer=answer, sources=cited_sources)
+
+    @staticmethod
+    def _remove_unretrieved_citations(
+        answer: str,
+        sources: Sequence[ChatSource],
+    ) -> str:
+        valid_citations = {source.citation for source in sources}
+        removed_citations: set[str] = set()
+
+        def keep_retrieved_citation(match: re.Match[str]) -> str:
+            citation = match.group("citation")
+            if citation in valid_citations:
+                return f"{match.group('prefix')}[{citation}]"
+            removed_citations.add(f"[{citation}]")
+            return ""
+
+        validated_answer = re.sub(
+            r"(?P<prefix>[ \t]*)[【\[](?P<citation>S\d+)[】\]]",
+            keep_retrieved_citation,
+            answer,
+        )
+        for citation in sorted(removed_citations):
+            logger.warning("Removed citation to an unretrieved source: %s", citation)
+        return validated_answer
 
     @staticmethod
     def _build_sources(points: Sequence[models.ScoredPoint]) -> list[ChatSource]:
@@ -115,7 +146,7 @@ class ChatService:
             for source in sources
         )
         return (
-            "Cite supporting facts with the provided bracketed source labels, "
+            "Cite supporting facts with the provided source labels, "
             "such as [S1]. Do not invent citations.\n\n"
             f"{source_context}"
         )
