@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
+from app.api.routes.chat import router as chat_router
 from app.api.routes.data import router as data_router
 from app.core.logging import configure_logging
 
@@ -8,6 +9,7 @@ configure_logging()
 
 app = FastAPI(title="Personal AI Cortex")
 app.include_router(data_router)
+app.include_router(chat_router)
 
 
 # Add this so i can upload more than one files in the /docs at once

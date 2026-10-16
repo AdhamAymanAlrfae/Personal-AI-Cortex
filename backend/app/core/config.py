@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,6 +31,7 @@ class Settings(BaseSettings):
     langfuse_secret_key: SecretStr | None = None
     langfuse_public_key: SecretStr | None = None
     langfuse_base_url: str | None = None
+    llm_prompt_name: str = "first_prompt"
 
     # Qdrant settings
     qdrant_api_key: SecretStr
@@ -45,10 +47,21 @@ class Settings(BaseSettings):
     sparse_model: str = "Qdrant/bm25"
 
     # LLM model
-    llm_model: str = "gemma4:e4b"
+    llm_provider: Literal["ollama", "groq", "openrouter", "google"] = "ollama"
     llm_context: int = 128_000
     llm_max_tokens: int = 4096
     llm_temperature: float = 0.7
+    ollama_api_key: SecretStr = SecretStr("ollama")
+    ollama_base_url: str = "http://localhost:11434/v1"
+    ollama_model: str = "gemma4:e4b"
+    groq_api_key: SecretStr | None = None
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "llama-3.3-70b-versatile"
+    openrouter_api_key: SecretStr | None = None
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "openai/gpt-4o-mini"
+    google_api_key: SecretStr | None = None
+    google_model: str = "gemini-2.5-flash"
 
 
 settings = Settings()  # pyright: ignore[reportCallIssue] # Loaded from environment/.env

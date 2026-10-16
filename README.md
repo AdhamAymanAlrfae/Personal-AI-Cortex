@@ -62,6 +62,38 @@ query_vector = ollama_embeddings.embed_query("Search question")
 
 The Ollama provider requires the selected embedding model to be available on the configured Ollama server. Omit `base_url` to use Ollama's default server address.
 
+## LLM Providers and Prompts
+
+Select `ollama`, `groq`, `openrouter`, or `google` with `LLM_PROVIDER`. Ollama, Groq, and OpenRouter use the OpenAI SDK chat completions interface. Google Gemini uses the native Google Gen AI SDK. Configure the selected provider's model and API key in `backend/.env`. Ollama defaults to `http://localhost:11434/v1`; when the backend runs in Docker and Ollama runs on the host, set `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1`.
+
+When both `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are configured, OpenAI-compatible calls are instrumented by Langfuse; the native Google Gen AI call records its own Langfuse generation with model input, output, and token usage. This sends prompts and model responses to your Langfuse instance. `LLMPromptHandler` loads the chat prompt named by `LLM_PROMPT_NAME` from Langfuse and formats it into LangChain messages with `build_messages(...)`. The chat prompt must use `question` and `context` variables. Without either credential, it uses a built-in grounded-answer fallback with those variables. If only one credential is set, initialization fails so a configuration mistake is not hidden.
+
+```python
+from app.providers.llm import LLMPromptHandler, create_llm_provider
+
+llm = create_llm_provider()
+messages = LLMPromptHandler().build_messages(
+    question="What does the project do?",
+    context="The project is a personal knowledge assistant.",
+)
+answer = llm.invoke(messages)
+```
+
+## Chat
+
+`POST /chat` runs the complete RAG answer pipeline: it embeds the question, performs hybrid retrieval, formats the selected chunks into the configured prompt, invokes the selected LLM, and returns the answer with source citations. Example request:
+
+```json
+{
+  "question": "What does the project do?",
+  "limit": 5,
+  "threshold": 0.5,
+  "mode": "hybrid"
+}
+```
+
+The `limit`, `threshold`, and `mode` fields are optional. `mode` can be `hybrid`, `dense`, or `sparse`. The response contains `answer` and a `sources` array with citation labels, source paths, page/section details when available, retrieval scores, and the supporting chunk text.
+
 ## Document Ingestion
 
 Upload one or more `.txt`, `.md`, or `.pdf` files to `POST /data/upload` as multipart form fields named `files`. Each file is saved under `data/raw/`; the files are then chunked individually, with all chunks embedded together and sent to Qdrant in one upsert per upload request. The endpoint returns an outcome for each file. Because embedding and storage are shared across the request, a failure in either stage marks every file in that upload batch as failed and returns HTTP `207 Multi-Status`.
