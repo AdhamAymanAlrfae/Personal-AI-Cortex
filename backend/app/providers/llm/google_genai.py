@@ -77,49 +77,55 @@ class GoogleLLMProvider(BaseLLMProvider):
         if not contents:
             raise ValueError("At least one user or assistant message is required.")
 
-        generation = None
-        if self._langfuse is not None:
-            generation = self._langfuse.start_observation(
-                name="google-genai",
-                as_type="generation",
-                model=self._model,
-                model_parameters={
-                    "temperature": str(settings.llm_temperature),
-                    "max_output_tokens": settings.llm_max_tokens,
-                },
-                input=self._serialize_messages(messages),
-            )
-
-        try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=cast(types.ContentListUnionDict, contents),
-                config=types.GenerateContentConfig(
-                    system_instruction="\n\n".join(system_instructions) or None,
-                    temperature=settings.llm_temperature,
-                    max_output_tokens=settings.llm_max_tokens,
-                ),
-            )
-            answer = response.text
-            if not answer:
-                raise ValueError("The Google Gen AI response did not contain text.")
-            result = AIMessage(content=answer)
-            if generation is not None:
-                generation.update(
-                    output=answer,
-                    usage_details=self._usage_details(response),
-                )
+        if self._langfuse is None:
+            result, _ = self._generate_content(system_instructions, contents)
             return result
-        except Exception:
-            if generation is not None:
+
+        with self._langfuse.start_as_current_observation(
+            name="google-genai",
+            as_type="generation",
+            model=self._model,
+            model_parameters={
+                "temperature": str(settings.llm_temperature),
+                "max_output_tokens": settings.llm_max_tokens,
+            },
+            input=self._serialize_messages(messages),
+        ) as generation:
+            try:
+                response, usage_details = self._generate_content(
+                    system_instructions,
+                    contents,
+                )
+                generation.update(
+                    output=response.content,
+                    usage_details=usage_details,
+                )
+                return response
+            except Exception:
                 generation.update(
                     level="ERROR",
                     status_message="Google Gen AI request failed.",
                 )
-            raise
-        finally:
-            if generation is not None:
-                generation.end()
+                raise
+
+    def _generate_content(
+        self,
+        system_instructions: list[str],
+        contents: list[types.ContentUnion],
+    ) -> tuple[AIMessage, dict[str, int]]:
+        response = self._client.models.generate_content(
+            model=self._model,
+            contents=cast(types.ContentListUnionDict, contents),
+            config=types.GenerateContentConfig(
+                system_instruction="\n\n".join(system_instructions) or None,
+                temperature=settings.llm_temperature,
+                max_output_tokens=settings.llm_max_tokens,
+            ),
+        )
+        answer = response.text
+        if not answer:
+            raise ValueError("The Google Gen AI response did not contain text.")
+        return AIMessage(content=answer), self._usage_details(response)
 
     @staticmethod
     def _serialize_messages(messages: Sequence[BaseMessage]) -> list[dict[str, str]]:

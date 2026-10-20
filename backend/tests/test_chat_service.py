@@ -1,4 +1,5 @@
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from typing import cast
 
 import pytest
@@ -8,6 +9,7 @@ from qdrant_client import models
 from app.providers.llm.base import BaseLLMProvider
 from app.providers.llm.prompt import LLMPromptHandler
 from app.schemas.chat import ChatSource
+from app.services import chat as chat_module
 from app.services.chat import ChatService
 from app.services.retrieval import DocumentRetrievalService, RetrievalMode
 
@@ -122,6 +124,73 @@ def test_chat_service_retrieves_builds_prompt_invokes_llm_and_returns_citations(
             content="Relevant knowledge.",
         )
     ]
+
+
+def test_chat_service_records_root_io_and_propagates_v4_attributes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    class FakeObservation:
+        def update(self, **kwargs: object) -> None:
+            calls["root_update"] = kwargs
+
+    class FakeLangfuse:
+        @contextmanager
+        def start_as_current_observation(
+            self, **kwargs: object
+        ) -> Iterator[FakeObservation]:
+            calls["root_start"] = kwargs
+            calls["root_active"] = True
+            try:
+                yield FakeObservation()
+            finally:
+                calls["root_active"] = False
+
+    @contextmanager
+    def fake_propagate_attributes(**kwargs: object) -> Iterator[None]:
+        calls["attributes"] = kwargs
+        calls["attributes_active"] = True
+        try:
+            yield
+        finally:
+            calls["attributes_active"] = False
+
+    class TracedRetrieval(FakeRetrieval):
+        def retrieve(self, *args: object, **kwargs: object) -> list[models.ScoredPoint]:
+            assert calls["root_active"] is True
+            assert calls["attributes_active"] is True
+            return super().retrieve(
+                cast(str, args[0]),
+                mode=cast(RetrievalMode, kwargs["mode"]),
+                limit=cast(int, kwargs["limit"]),
+                threshold=cast(float, kwargs["threshold"]),
+            )
+
+    monkeypatch.setattr(chat_module, "get_langfuse_client", FakeLangfuse)
+    monkeypatch.setattr(chat_module, "propagate_attributes", fake_propagate_attributes)
+    monkeypatch.setattr(chat_module.settings, "app_env", "test")
+    service = ChatService(
+        cast(DocumentRetrievalService, TracedRetrieval([_point()])),
+        FakeLLM("A grounded answer [S1]."),
+        cast(LLMPromptHandler, FakePromptHandler()),
+    )
+
+    response = service.answer("What is this?")
+
+    assert response.answer == "A grounded answer [S1]."
+    assert calls["root_start"] == {
+        "as_type": "span",
+        "name": "chat",
+        "input": {"question": "What is this?"},
+    }
+    assert calls["attributes"] == {
+        "trace_name": "chat",
+        "environment": "test",
+    }
+    assert calls["root_update"] == {"output": {"answer": "A grounded answer [S1]."}}
+    assert calls["root_active"] is False
+    assert calls["attributes_active"] is False
 
 
 def test_chat_service_handles_no_retrieved_sources() -> None:

@@ -1,11 +1,14 @@
+from collections.abc import Iterator
+from contextlib import AbstractContextManager, contextmanager
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from app.providers.llm import GoogleLLMProvider, create_llm_provider
-from app.providers.llm import google_genai as google_genai_module
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from pydantic import SecretStr
+
+from app.providers.llm import GoogleLLMProvider, create_llm_provider
+from app.providers.llm import google_genai as google_genai_module
 
 
 def test_google_provider_uses_native_sdk_and_records_langfuse_generation(
@@ -17,7 +20,11 @@ def test_google_provider_uses_native_sdk_and_records_langfuse_generation(
         def update(self, **kwargs: object) -> None:
             calls["generation_update"] = kwargs
 
-        def end(self) -> None:
+    @contextmanager
+    def fake_generation() -> Iterator[FakeGeneration]:
+        try:
+            yield FakeGeneration()
+        finally:
             calls["generation_end"] = True
 
     class FakeGoogleClient:
@@ -36,9 +43,11 @@ def test_google_provider_uses_native_sdk_and_records_langfuse_generation(
             )
 
     class FakeLangfuse:
-        def start_observation(self, **kwargs: object) -> FakeGeneration:
+        def start_as_current_observation(
+            self, **kwargs: object
+        ) -> AbstractContextManager[FakeGeneration]:
             calls["generation_start"] = kwargs
-            return FakeGeneration()
+            return fake_generation()
 
     monkeypatch.setattr(google_genai_module.genai, "Client", FakeGoogleClient)
     monkeypatch.setattr(

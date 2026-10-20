@@ -24,7 +24,7 @@ class BaseVectorStore(ABC, Generic[PointType, PointScore]):
         *,
         limit: int = 5,
         threshold: float = 0.5,
-        # filters: dict[str, Any] | None = None, TODO: Implement filtering for dense search
+        # filters: dict[str, Any] | None = None,
     ) -> list[PointScore]:
         """Search using dense vector similarity."""
         ...
@@ -37,7 +37,7 @@ class BaseVectorStore(ABC, Generic[PointType, PointScore]):
         *,
         limit: int = 5,
         threshold: float = 0.5,
-        # filters: dict[str, Any] | None = None, TODO: Implement filtering for sparse search
+        # filters: dict[str, Any] | None = None,
     ) -> list[PointScore]:
         """Search using sparse vector similarity."""
         ...
@@ -51,7 +51,7 @@ class BaseVectorStore(ABC, Generic[PointType, PointScore]):
         *,
         limit: int = 5,
         threshold: float = 0.5,
-        # filters: dict[str, Any] | None = None, TODO: Implement filtering for hybrid search
+        # filters: dict[str, Any] | None = None,
     ) -> list[PointScore]:
         """Combine dense and sparse search results."""
         ...

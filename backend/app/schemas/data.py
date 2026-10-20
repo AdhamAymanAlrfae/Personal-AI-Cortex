@@ -9,9 +9,6 @@ class UploadedFileResult(BaseModel):
     filename: str
     path: str
     status: Literal["uploaded", "ingested", "ingestion_failed"]
-    documents_loaded: int | None = None
-    chunks_created: int | None = None
-    points_added: int | None = None
     error: str | None = None
 
 

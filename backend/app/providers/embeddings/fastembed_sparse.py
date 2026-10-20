@@ -12,19 +12,17 @@ logger = logging.getLogger(__name__)
 class FastEmbedSparseEmbeddingProvider(BaseSparseEmbeddingProvider):
     """Sparse embedding provider backed by FastEmbed."""
 
-    def __init__(self, model: str = settings.sparse_model) -> None:
+    def __init__(self) -> None:
         from fastembed import SparseTextEmbedding
 
-        logger.info("Loading sparse embedding model %s", model)
-        self._embeddings = SparseTextEmbedding(model_name=model)
-        logger.info("Loaded sparse embedding model %s", model)
+        logger.info("Loading sparse embedding model %s", settings.sparse_model)
+        self._embeddings = SparseTextEmbedding(model_name=settings.sparse_model)
 
     def embed_documents(self, texts: list[str]) -> list[SparseVectorEmbedding]:
         logger.debug("Generating sparse embeddings for %d documents", len(texts))
         embeddings = [
             self._convert_embedding(item) for item in self._embeddings.embed(texts)
         ]
-        logger.debug("Generated sparse embeddings for %d documents", len(embeddings))
         return embeddings
 
     def embed_query(self, text: str) -> SparseVectorEmbedding:

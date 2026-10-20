@@ -41,10 +41,6 @@ class DocumentIngestionService:
         self._vector_store = vector_store
         self._chunker = chunker
 
-    def ingest_file(self, file_path: str | Path) -> IngestionResult:
-        """Ingest one supported file and upsert its chunks into the vector store."""
-        return self.ingest_files([file_path])[0]
-
     def ingest_files(self, file_paths: Sequence[str | Path]) -> list[IngestionResult]:
         """Chunk files individually, then embed and store all chunks in one batch."""
         paths = [Path(file_path) for file_path in file_paths]
@@ -58,8 +54,9 @@ class DocumentIngestionService:
             chunks_by_file.append(chunks)
 
         all_chunks = [chunk for chunks in chunks_by_file for chunk in chunks]
+
         if not all_chunks:
-            logger.info("No chunks created; skipping embedding and storage")
+            logger.warning("No chunks created; skipping embedding and storage")
             return [
                 IngestionResult(
                     source=str(path),
@@ -67,9 +64,7 @@ class DocumentIngestionService:
                     chunks_created=0,
                     points_added=0,
                 )
-                for path, document_count in zip(
-                    paths, documents_loaded, strict=True
-                )
+                for path, document_count in zip(paths, documents_loaded, strict=True)
             ]
 
         texts = [chunk.page_content for chunk in all_chunks]

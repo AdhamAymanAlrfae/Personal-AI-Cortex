@@ -46,12 +46,10 @@ class PendingUpload:
 @lru_cache(maxsize=1)
 def get_ingestion_components() -> IngestionComponents:
     """Initialize reusable embedding providers and the Qdrant collection."""
-    vector_store = QdrantVectorStore(settings.qdrant_collection_name)
-    vector_store.create_collection()
     return IngestionComponents(
         dense_embeddings=OllamaEmbeddingProvider(),
         sparse_embeddings=FastEmbedSparseEmbeddingProvider(),
-        vector_store=vector_store,
+        vector_store=QdrantVectorStore(),
         chunker=MarkdownChunker(),
     )
 
@@ -109,7 +107,7 @@ def ingest_data(
     paths = _get_ingest_files()
     try:
         if recreate_collection:
-            vector_store = QdrantVectorStore(settings.qdrant_collection_name)
+            vector_store = QdrantVectorStore()
             existed = vector_store.recreate_collection()
             logger.info(
                 "Qdrant collection %s %s before ingestion",
@@ -155,9 +153,6 @@ def ingest_data(
             filename=path.name,
             path=f"data/raw/{path.name}",
             status="ingested",
-            documents_loaded=result.documents_loaded,
-            chunks_created=result.chunks_created,
-            points_added=result.points_added,
         )
         for path, result in zip(paths, ingestion_results, strict=True)
     ]

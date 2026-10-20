@@ -5,9 +5,12 @@ from pathlib import PurePath
 from typing import Any
 
 from langchain_core.messages import BaseMessage
+from langfuse import propagate_attributes
 from qdrant_client import models
 
+from app.core.config import settings
 from app.providers.llm.base import BaseLLMProvider
+from app.providers.llm.langfuse_client import get_langfuse_client
 from app.providers.llm.prompt import LLMPromptHandler
 from app.schemas.chat import ChatResponse, ChatSource
 from app.services.retrieval import DocumentRetrievalService, RetrievalMode
@@ -40,6 +43,36 @@ class ChatService:
         if not question.strip():
             raise ValueError("Chat question must not be empty.")
 
+        langfuse = get_langfuse_client()
+        if langfuse is None:
+            return self._answer(question, limit=limit, threshold=threshold, mode=mode)
+
+        with langfuse.start_as_current_observation(
+            as_type="span",
+            name="chat",
+            input={"question": question},
+        ) as root_observation:
+            with propagate_attributes(
+                trace_name="chat",
+                environment=settings.app_env,
+            ):
+                response = self._answer(
+                    question,
+                    limit=limit,
+                    threshold=threshold,
+                    mode=mode,
+                )
+            root_observation.update(output={"answer": response.answer})
+            return response
+
+    def _answer(
+        self,
+        question: str,
+        *,
+        limit: int,
+        threshold: float,
+        mode: RetrievalMode,
+    ) -> ChatResponse:
         points = self._retrieval.retrieve(
             question,
             mode=mode,

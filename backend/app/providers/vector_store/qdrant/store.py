@@ -9,13 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint]):
-    def __init__(self, collection_name: str):
-        self.collection_name = settings.qdrant_collection_name or collection_name
+    def __init__(self):
+        self.collection_name = settings.qdrant_collection_name
         self.client = QdrantClient(
             url=settings.qdrant_url, api_key=settings.qdrant_api_key.get_secret_value()
         )
         logger.info(
-            "Initialized Qdrant vector store for collection %s", collection_name
+            "Initialized Qdrant vector store for collection %s", self.collection_name
         )
 
     def create_collection(self) -> None:

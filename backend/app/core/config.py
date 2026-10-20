@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     embed_model: str = "qwen3-embedding:0.6b"
     embed_dim: int = 1024
     embed_context: int = 32_000
+    embed_base_url: str | None = None
 
     # Sparse model
     sparse_model: str = "Qdrant/bm25"
