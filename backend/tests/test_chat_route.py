@@ -3,7 +3,7 @@ from collections.abc import Iterator
 import pytest
 from app.api.routes import chat as chat_route
 from app.main import app
-from app.schemas.chat import ChatResponse, ChatSource
+from app.schemas.chat import ChatResponse, ChatSource, ResponseModelInfo
 from app.services.retrieval import RetrievalMode
 from fastapi.testclient import TestClient
 
@@ -31,6 +31,13 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
                             content="Supporting chunk.",
                         )
                     ],
+                    model_info=ResponseModelInfo(
+                        LLM_PROVIDER="ollama",
+                        LLM_TEMPERATURE=0.7,
+                        LLM_TOP_P=0.9,
+                        EMBED_MODEL="qwen3-embedding:0.6b",
+                        EMBED_DIM=1024,
+                    ),
                 )
 
         return Service()
@@ -66,6 +73,13 @@ def test_chat_route_returns_answer_and_citations(client: TestClient) -> None:
                 "content": "Supporting chunk.",
             }
         ],
+        "model_info": {
+            "LLM_PROVIDER": "ollama",
+            "LLM_TEMPERATURE": 0.7,
+            "LLM_TOP_P": 0.9,
+            "EMBED_MODEL": "qwen3-embedding:0.6b",
+            "EMBED_DIM": 1024,
+        },
     }
 
 

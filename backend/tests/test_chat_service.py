@@ -8,7 +8,7 @@ from qdrant_client import models
 
 from app.providers.llm.base import BaseLLMProvider
 from app.providers.llm.prompt import LLMPromptHandler
-from app.schemas.chat import ChatSource
+from app.schemas.chat import ChatSource, ResponseModelInfo
 from app.services import chat as chat_module
 from app.services.chat import ChatService
 from app.services.retrieval import DocumentRetrievalService, RetrievalMode
@@ -124,6 +124,13 @@ def test_chat_service_retrieves_builds_prompt_invokes_llm_and_returns_citations(
             content="Relevant knowledge.",
         )
     ]
+    assert response.model_info == ResponseModelInfo(
+        LLM_PROVIDER=chat_module.settings.llm_provider,
+        LLM_TEMPERATURE=chat_module.settings.llm_temperature,
+        LLM_TOP_P=chat_module.settings.llm_top_p,
+        EMBED_MODEL=chat_module.settings.embed_model,
+        EMBED_DIM=chat_module.settings.embed_dim,
+    )
 
 
 def test_chat_service_records_root_io_and_propagates_v4_attributes(

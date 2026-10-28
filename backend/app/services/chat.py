@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.providers.llm.base import BaseLLMProvider
 from app.providers.llm.langfuse_client import get_langfuse_client
 from app.providers.llm.prompt import LLMPromptHandler
-from app.schemas.chat import ChatResponse, ChatSource
+from app.schemas.chat import ChatResponse, ChatSource, ResponseModelInfo
 from app.services.retrieval import DocumentRetrievalService
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,18 @@ class ChatService:
             len(cited_sources),
             len(sources),
         )
-        return ChatResponse(answer=answer, sources=cited_sources)
+        model_info = ResponseModelInfo(
+            LLM_PROVIDER=settings.llm_provider,
+            LLM_TEMPERATURE=settings.llm_temperature,
+            LLM_TOP_P=settings.llm_top_p,
+            EMBED_MODEL=settings.embed_model,
+            EMBED_DIM=settings.embed_dim,
+        )
+        return ChatResponse(
+            answer=answer,
+            sources=cited_sources,
+            model_info=model_info,
+        )
 
     @staticmethod
     def _remove_unretrieved_citations(

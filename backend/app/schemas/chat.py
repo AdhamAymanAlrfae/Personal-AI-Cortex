@@ -1,15 +1,10 @@
 from pydantic import BaseModel, Field, field_validator
 
-from app.services.retrieval import RetrievalMode
-
 
 class ChatRequest(BaseModel):
     """Question and retrieval controls for one RAG chat turn."""
 
     question: str = Field(min_length=1, max_length=10_000)
-    limit: int = Field(default=5, ge=1, le=20)
-    threshold: float = Field(default=0.5, ge=0.0, le=1.0)
-    mode: RetrievalMode = RetrievalMode.HYBRID
 
     @field_validator("question")
     @classmethod
@@ -32,8 +27,17 @@ class ChatSource(BaseModel):
     content: str
 
 
+class ResponseModelInfo(BaseModel):
+    LLM_PROVIDER: str
+    LLM_TEMPERATURE: float
+    LLM_TOP_P: float
+    EMBED_MODEL: str
+    EMBED_DIM: int
+
+
 class ChatResponse(BaseModel):
     """Grounded answer and the source chunks retrieved for it."""
 
     answer: str
     sources: list[ChatSource]
+    model_info: ResponseModelInfo
