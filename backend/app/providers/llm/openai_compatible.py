@@ -38,21 +38,20 @@ class OpenAICompatibleLLMProvider(BaseLLMProvider):
 
     def invoke(self, messages: Sequence[BaseMessage]) -> AIMessage:
         """Generate a chat completion and return it as a LangChain AI message."""
-        response = self._client.chat.completions.create(
+        response = self._client.responses.create(
             model=self._model,
-            messages=cast(
+            input=cast(
                 list[ChatCompletionMessageParam],
                 convert_to_openai_messages(messages),
             ),
-            max_tokens=settings.llm_max_tokens,
+            max_output_tokens=settings.llm_max_tokens,
             temperature=settings.llm_temperature,
+            top_p=settings.llm_top_p,
         )
-        if not response.choices:
-            raise ValueError("The LLM response did not contain any choices.")
-        content = response.choices[0].message.content
-        if content is None:
+        if not hasattr(response, "output_text") or response.output_text is None:
             raise ValueError("The LLM response did not contain a text completion.")
-        return AIMessage(content=content)
+
+        return AIMessage(content=response.output_text)
 
 
 class OllamaLLMProvider(OpenAICompatibleLLMProvider):
@@ -129,4 +128,3 @@ class OpenRouterLLMProvider(OpenAICompatibleLLMProvider):
                 base_url if base_url is not None else settings.openrouter_base_url
             ),
         )
-

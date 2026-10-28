@@ -64,15 +64,13 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
             self.collection_name,
         )
 
-    def dense_search(
-        self, query_vector: list[float], *, limit: int = 5, threshold: float = 0.7
-    ) -> list[models.ScoredPoint]:
+    def dense_search(self, query_vector: list[float]) -> list[models.ScoredPoint]:
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             query=query_vector,
-            limit=limit,
+            limit=settings.retrieval_limit,
             using="dense_vector",
-            threshold=threshold,
+            threshold=settings.retrieval_threshold,
         )
         points = search_result.points
         logger.debug(
@@ -80,8 +78,8 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
             "(limit=%d, threshold=%s)",
             self.collection_name,
             len(points),
-            limit,
-            threshold,
+            settings.retrieval_limit,
+            settings.retrieval_threshold,
         )
         return points
 
@@ -89,23 +87,20 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         self,
         query_indices: list[int],
         query_values: list[float],
-        *,
-        limit: int = 5,
-        threshold: float = 0.5,
     ) -> list[models.ScoredPoint]:
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             query=models.SparseVector(indices=query_indices, values=query_values),
-            limit=limit,
+            limit=settings.retrieval_limit,
             using="sparse_vector",
-            score_threshold=threshold,
+            score_threshold=settings.retrieval_threshold,
         )
         points = search_result.points
         logger.debug(
             "Sparse search in Qdrant collection %s returned %d points (limit=%d)",
             self.collection_name,
             len(points),
-            limit,
+            settings.retrieval_limit,
         )
         return points
 
@@ -114,9 +109,6 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
         dense_vector: list[float],
         sparse_indices: list[int],
         sparse_values: list[float],
-        *,
-        limit: int = 5,
-        threshold: float = 0.5,
     ) -> list[models.ScoredPoint]:
         search_result = self.client.query_points(
             collection_name=self.collection_name,
@@ -125,24 +117,24 @@ class QdrantVectorStore(BaseVectorStore[models.PointStruct, models.ScoredPoint])
                     query=models.SparseVector(
                         indices=sparse_indices, values=sparse_values
                     ),
-                    limit=limit,
+                    limit=settings.retrieval_limit,
                     using="sparse_vector",
                 ),
                 models.Prefetch(
                     query=dense_vector,
-                    limit=limit,
+                    limit=settings.retrieval_limit,
                     using="dense_vector",
                 ),
             ],
             query=models.FusionQuery(fusion=models.Fusion.RRF),
-            limit=limit,
-            score_threshold=threshold,
+            limit=settings.retrieval_limit,
+            score_threshold=settings.retrieval_threshold,
         )
         points = search_result.points
         logger.debug(
             "Hybrid search in Qdrant collection %s returned %d points (limit=%d)",
             self.collection_name,
             len(points),
-            limit,
+            settings.retrieval_limit,
         )
         return points

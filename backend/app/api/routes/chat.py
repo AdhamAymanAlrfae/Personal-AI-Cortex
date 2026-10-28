@@ -34,9 +34,4 @@ def chat(
     service: Annotated[ChatService, Depends(get_chat_service)],
 ) -> ChatResponse:
     """Answer a question using retrieved knowledge and return supporting sources."""
-    return service.answer(
-        request.question,
-        limit=request.limit,
-        threshold=request.threshold,
-        mode=request.mode,
-    )
+    return service.answer(request.question)

@@ -4,6 +4,8 @@ from typing import Literal
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.schemas.retrieval_types import RetrievalMode
+
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 RAW_DATA_DIR = BACKEND_ROOT.parent / "data" / "raw"
 
@@ -37,6 +39,9 @@ class Settings(BaseSettings):
     qdrant_api_key: SecretStr
     qdrant_url: str
     qdrant_collection_name: str = "personal-ai-cortex"
+    retrieval_limit: int = 5
+    retrieval_threshold: float = 0.7
+    retrieval_mode: RetrievalMode = RetrievalMode.HYBRID
 
     # Embedding model
     embed_model: str = "qwen3-embedding:0.6b"
@@ -52,6 +57,8 @@ class Settings(BaseSettings):
     llm_context: int = 128_000
     llm_max_tokens: int = 4096
     llm_temperature: float = 0.7
+    llm_top_k: int = 40
+    llm_top_p: float = 0.9
     ollama_api_key: SecretStr = SecretStr("ollama")
     ollama_base_url: str = "http://localhost:11434/v1"
     ollama_model: str = "gemma4:e4b"

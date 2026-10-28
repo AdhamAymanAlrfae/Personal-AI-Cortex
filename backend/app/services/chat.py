@@ -13,7 +13,7 @@ from app.providers.llm.base import BaseLLMProvider
 from app.providers.llm.langfuse_client import get_langfuse_client
 from app.providers.llm.prompt import LLMPromptHandler
 from app.schemas.chat import ChatResponse, ChatSource
-from app.services.retrieval import DocumentRetrievalService, RetrievalMode
+from app.services.retrieval import DocumentRetrievalService
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +34,6 @@ class ChatService:
     def answer(
         self,
         question: str,
-        *,
-        limit: int = 5,
-        threshold: float = 0.3,
-        mode: RetrievalMode = RetrievalMode.HYBRID,
     ) -> ChatResponse:
         """Retrieve evidence, build a prompt, invoke the LLM, and return citations."""
         if not question.strip():
@@ -45,7 +41,7 @@ class ChatService:
 
         langfuse = get_langfuse_client()
         if langfuse is None:
-            return self._answer(question, limit=limit, threshold=threshold, mode=mode)
+            return self._answer(question)
 
         with langfuse.start_as_current_observation(
             as_type="span",
@@ -58,9 +54,6 @@ class ChatService:
             ):
                 response = self._answer(
                     question,
-                    limit=limit,
-                    threshold=threshold,
-                    mode=mode,
                 )
             root_observation.update(output={"answer": response.answer})
             return response
@@ -68,16 +61,10 @@ class ChatService:
     def _answer(
         self,
         question: str,
-        *,
-        limit: int,
-        threshold: float,
-        mode: RetrievalMode,
     ) -> ChatResponse:
         points = self._retrieval.retrieve(
             question,
-            mode=mode,
-            limit=limit,
-            threshold=threshold,
+            mode=settings.retrieval_mode,
         )
         sources = self._build_sources(points)
         context = self._format_context(sources)

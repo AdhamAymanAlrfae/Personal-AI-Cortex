@@ -1,21 +1,14 @@
 import logging
-from enum import Enum
 
 from qdrant_client import models
 
+from app.core.config import settings
 from app.providers.embeddings.base import BaseEmbeddingProvider
 from app.providers.embeddings.sparse_base import BaseSparseEmbeddingProvider
 from app.providers.vector_store.base import BaseVectorStore
+from app.schemas.retrieval_types import RetrievalMode
 
 logger = logging.getLogger(__name__)
-
-
-class RetrievalMode(str, Enum):
-    """Vector search strategy used to retrieve relevant chunks."""
-
-    DENSE = "dense"
-    SPARSE = "sparse"
-    HYBRID = "hybrid"
 
 
 class DocumentRetrievalService:
@@ -36,30 +29,28 @@ class DocumentRetrievalService:
         query: str,
         *,
         mode: RetrievalMode = RetrievalMode.HYBRID,
-        limit: int = 5,
-        threshold: float = 0.7,
     ) -> list[models.ScoredPoint]:
         """Return ranked points for a query using the selected search strategy."""
         if not query.strip():
             raise ValueError("Search query must not be empty.")
-        if limit <= 0:
+        if settings.retrieval_limit <= 0:
             raise ValueError("Search limit must be greater than zero.")
 
-        logger.info("Retrieving up to %d points using %s search", limit, mode.value)
+        logger.info(
+            "Retrieving up to %d points using %s search",
+            settings.retrieval_limit,
+            mode.value,
+        )
         if mode is RetrievalMode.DENSE:
             dense_vector = self._dense_embeddings.embed_query(query)
             return self._vector_store.dense_search(
                 dense_vector,
-                limit=limit,
-                threshold=threshold,
             )
         if mode is RetrievalMode.SPARSE:
             sparse_vector = self._sparse_embeddings.embed_query(query)
             return self._vector_store.sparse_search(
                 sparse_vector.indices,
                 sparse_vector.values,
-                limit=limit,
-                threshold=threshold,
             )
 
         dense_vector = self._dense_embeddings.embed_query(query)
@@ -68,6 +59,4 @@ class DocumentRetrievalService:
             dense_vector,
             sparse_vector.indices,
             sparse_vector.values,
-            limit=limit,
-            threshold=threshold,
         )
