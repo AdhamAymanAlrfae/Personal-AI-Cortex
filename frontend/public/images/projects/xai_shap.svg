@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="shapBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06080d"/>
+      <stop offset="50%" stop-color="#0e1726"/>
+      <stop offset="100%" stop-color="#091b24"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#shapBg)"/>
+
+  <!-- SHAP Waterfall & Summary Simulation -->
+  <g transform="translate(60, 90)">
+    <!-- Base line -->
+    <line x1="280" y1="0" x2="280" y2="280" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4"/>
+    <text x="250" y="-12" fill="#94a3b8" font-family="monospace" font-size="11">BASE_VALUE E[f(X)] = 0.02</text>
+
+    <!-- Feature Bar 1: ca (major vessels) -->
+    <text x="0" y="30" fill="#cbd5e1" font-family="monospace" font-size="12">ca (major vessels = 3)</text>
+    <rect x="150" y="15" width="130" height="22" rx="3" fill="#0284c7"/>
+    <text x="100" y="31" fill="#38bdf8" font-family="monospace" font-size="11">-0.13</text>
+
+    <!-- Feature Bar 2: cp (chest pain type) -->
+    <text x="0" y="75" fill="#cbd5e1" font-family="monospace" font-size="12">cp (chest pain type = 0)</text>
+    <rect x="280" y="60" width="95" height="22" rx="3" fill="#e11d48"/>
+    <text x="385" y="76" fill="#fb7185" font-family="monospace" font-size="11">+0.09</text>
+
+    <!-- Feature Bar 3: thalach (max heart rate) -->
+    <text x="0" y="120" fill="#cbd5e1" font-family="monospace" font-size="12">thalach (max HR = 168)</text>
+    <rect x="200" y="105" width="80" height="22" rx="3" fill="#0284c7"/>
+    <text x="150" y="121" fill="#38bdf8" font-family="monospace" font-size="11">-0.08</text>
+
+    <!-- Feature Bar 4: oldpeak (ST depression) -->
+    <text x="0" y="165" fill="#cbd5e1" font-family="monospace" font-size="12">oldpeak (ST depress = 2.4)</text>
+    <rect x="280" y="150" width="140" height="22" rx="3" fill="#e11d48"/>
+    <text x="430" y="166" fill="#fb7185" font-family="monospace" font-size="11">+0.14</text>
+
+    <!-- Feature Bar 5: sex (female / male) -->
+    <text x="0" y="210" fill="#cbd5e1" font-family="monospace" font-size="12">sex (gender = 1)</text>
+    <rect x="280" y="195" width="40" height="22" rx="3" fill="#e11d48"/>
+    <text x="330" y="211" fill="#fb7185" font-family="monospace" font-size="11">+0.03</text>
+
+    <!-- Final Output Arrow -->
+    <line x1="280" y1="245" x2="355" y2="245" stroke="#10b981" stroke-width="3"/>
+    <polygon points="360,245 350,240 350,250" fill="#10b981"/>
+    <text x="375" y="249" fill="#10b981" font-family="monospace" font-size="13" font-weight="bold">f(x) = 0.81 [HIGH RISK]</text>
+  </g>
+
+  <!-- Reliability Curve Widget On Right -->
+  <g transform="translate(540, 80)">
+    <rect width="210" height="240" rx="8" fill="#0f172a" stroke="#334155"/>
+    <text x="15" y="30" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">RELIABILITY DIAGRAM</text>
+    <line x1="25" y1="210" x2="190" y2="210" stroke="#64748b"/>
+    <line x1="25" y1="210" x2="25" y2="50" stroke="#64748b"/>
+    <!-- Diagonal Ideal Line -->
+    <line x1="25" y1="210" x2="190" y2="50" stroke="#64748b" stroke-dasharray="3,3"/>
+    <!-- Calibrated Model Curve -->
+    <polyline points="25,210 60,185 95,140 135,95 190,52" fill="none" stroke="#10b981" stroke-width="2.5"/>
+    <circle cx="95" cy="140" r="4" fill="#34d399"/>
+    <circle cx="135" cy="95" r="4" fill="#34d399"/>
+    <text x="25" y="230" fill="#94a3b8" font-family="monospace" font-size="9">ECE: 0.018 (CALIBRATED)</text>
+  </g>
+
+  <!-- Title Top -->
+  <rect x="40" y="25" width="460" height="40" rx="6" fill="#0f172a" stroke="#334155"/>
+  <text x="55" y="50" fill="#38bdf8" font-family="monospace" font-size="12" font-weight="bold">EXPLAINABLE AI // SHAP WATERFALL &amp; CALIBRATION</text>
+</svg>

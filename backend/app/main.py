@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.api.routes.chat import router as chat_router
@@ -8,6 +9,15 @@ from app.core.logging import configure_logging
 configure_logging()
 
 app = FastAPI(title="Personal AI Cortex")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(data_router)
 app.include_router(chat_router)
 

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06080d"/>
+      <stop offset="50%" stop-color="#0b1320"/>
+      <stop offset="100%" stop-color="#061826"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="450" fill="url(#bgGrad)"/>
+
+  <!-- Optical Grid & Microscopic Coordinate Crosses -->
+  <g stroke="#1e293b" stroke-width="1" opacity="0.6">
+    <line x1="100" y1="0" x2="100" y2="450"/>
+    <line x1="200" y1="0" x2="200" y2="450"/>
+    <line x1="300" y1="0" x2="300" y2="450"/>
+    <line x1="400" y1="0" x2="400" y2="450"/>
+    <line x1="500" y1="0" x2="500" y2="450"/>
+    <line x1="600" y1="0" x2="600" y2="450"/>
+    <line x1="700" y1="0" x2="700" y2="450"/>
+    <line x1="0" y1="75" x2="800" y2="75"/>
+    <line x1="0" y1="150" x2="800" y2="150"/>
+    <line x1="0" y1="225" x2="800" y2="225"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="375" x2="800" y2="375"/>
+  </g>
+
+  <!-- Microscopic Field Aperture Ring -->
+  <circle cx="400" cy="225" r="180" fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.4"/>
+  <circle cx="400" cy="225" r="150" fill="#0b1528" fill-opacity="0.5" stroke="#334155" stroke-width="1"/>
+
+  <!-- Cellular Smear Blobs (Erythrocytes & Leukocytes) -->
+  <!-- Red Blood Cells (RBCs) -->
+  <circle cx="310" cy="180" r="28" fill="#e11d48" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" opacity="0.7"/>
+  <circle cx="310" cy="180" r="12" fill="#be123c" fill-opacity="0.3"/>
+
+  <circle cx="490" cy="280" r="25" fill="#e11d48" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" opacity="0.7"/>
+  <circle cx="490" cy="280" r="10" fill="#be123c" fill-opacity="0.3"/>
+
+  <circle cx="330" cy="290" r="22" fill="#e11d48" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" opacity="0.6"/>
+
+  <circle cx="480" cy="160" r="24" fill="#e11d48" fill-opacity="0.15" stroke="#f43f5e" stroke-width="1" opacity="0.6"/>
+
+  <!-- Target Blast Cell (Leukocyte Under AI Detection) -->
+  <g filter="url(#glow)">
+    <circle cx="400" cy="225" r="54" fill="#8b5cf6" fill-opacity="0.25" stroke="#a855f7" stroke-width="2"/>
+    <!-- Multi-lobed Nucleus -->
+    <path d="M 380 205 Q 395 190 415 200 Q 430 220 420 240 Q 400 255 385 240 Q 370 225 380 205 Z" fill="#6d28d9" fill-opacity="0.75" stroke="#c084fc" stroke-width="1.5"/>
+    <circle cx="410" cy="235" r="8" fill="#a855f7" fill-opacity="0.9"/>
+  </g>
+
+  <!-- AI Segmentation Bounding Box HUD -->
+  <rect x="330" y="155" width="140" height="140" rx="8" fill="none" stroke="#06b6d4" stroke-width="2" filter="url(#glow)"/>
+  
+  <!-- Corner Reticles -->
+  <path d="M 320 170 L 320 145 L 345 145" stroke="#38bdf8" stroke-width="3" fill="none"/>
+  <path d="M 480 170 L 480 145 L 455 145" stroke="#38bdf8" stroke-width="3" fill="none"/>
+  <path d="M 320 280 L 320 305 L 345 305" stroke="#38bdf8" stroke-width="3" fill="none"/>
+  <path d="M 480 280 L 480 305 L 455 305" stroke="#38bdf8" stroke-width="3" fill="none"/>
+
+  <!-- AI Detection Tag Banner -->
+  <rect x="330" y="118" width="170" height="28" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="1"/>
+  <text x="340" y="136" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold">BLAST_CELL : 99.99%</text>
+
+  <!-- Telemetry HUD Badges -->
+  <g font-family="monospace" font-size="11">
+    <rect x="40" y="40" width="220" height="70" rx="6" fill="#0f172a" fill-opacity="0.85" stroke="#334155"/>
+    <text x="55" y="65" fill="#94a3b8">OPTICAL_HARDWARE:</text>
+    <text x="185" y="65" fill="#10b981" font-weight="bold">CUSTOM_40X</text>
+    <text x="55" y="90" fill="#94a3b8">HOSPITAL_VALIDATION:</text>
+    <text x="195" y="90" fill="#38bdf8" font-weight="bold">95.0%</text>
+
+    <rect x="540" y="40" width="220" height="70" rx="6" fill="#0f172a" fill-opacity="0.85" stroke="#334155"/>
+    <text x="555" y="65" fill="#94a3b8">MODEL_ARCH:</text>
+    <text x="640" y="65" fill="#a855f7" font-weight="bold">CNN_CLASSIFIER</text>
+    <text x="555" y="90" fill="#94a3b8">DIAGNOSTIC_ACC:</text>
+    <text x="665" y="90" fill="#10b981" font-weight="bold">99.99%</text>
+  </g>
+</svg>
