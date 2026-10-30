@@ -5,10 +5,20 @@ from pathlib import Path
 from shutil import copyfileobj
 from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 from qdrant_client import models
 
 from app.core.config import RAW_DATA_DIR, settings
+from app.core.security import verify_api_key
 from app.providers.embeddings.base import BaseEmbeddingProvider
 from app.providers.embeddings.fastembed_sparse import (
     FastEmbedSparseEmbeddingProvider,
@@ -23,7 +33,9 @@ from app.services.ingestion import DocumentIngestionService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/data", tags=["data"])
+router = APIRouter(
+    prefix="/data", tags=["data"], dependencies=[Depends(verify_api_key)]
+)
 
 
 @dataclass(frozen=True)

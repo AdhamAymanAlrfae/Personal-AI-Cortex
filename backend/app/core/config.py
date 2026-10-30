@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     )
 
     # Application settings
+    app_api_key: SecretStr
     app_env: str = "development"
     log_level: str = "DEBUG"
 
